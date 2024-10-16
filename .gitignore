@@ -11,6 +11,8 @@ Thumbs.db
 test.py
 notes.txt
 downloads
+summarize
+transcripts
 
 # C extensions
 *.so
