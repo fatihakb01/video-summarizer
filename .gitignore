@@ -9,10 +9,12 @@ Thumbs.db
 
 # Test files
 test.py
+example.py
 notes.txt
 downloads
 summarize
 transcripts
+uploads
 
 # C extensions
 *.so

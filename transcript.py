@@ -2,12 +2,11 @@
 import os
 import speech_recognition as sr
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from download import Download
 
 
-class Transcript(Download):
-    def __init__(self, url, transcript_path="transcripts", transcript_name="video_transcript"):
-        super().__init__(url)
+class Transcript:
+    def __init__(self, file, transcript_path="transcripts", transcript_name="video_transcript"):
+        self.name = file
         self.transcript_path = transcript_path
         self.transcript_name = f"{self.transcript_path}/{transcript_name}.txt"
         # Create the transcript directory if it doesn't exist
@@ -17,8 +16,6 @@ class Transcript(Download):
     def extract_audio_from_video(self, output_audio_file):
         """Extract the audio from a video file and save it as a WAV file."""
         try:
-            if self.name is None:
-                self.merge()
             video_clip = VideoFileClip(self.name)
             audio_clip = video_clip.audio
             audio_clip.write_audiofile(output_audio_file)
@@ -31,8 +28,14 @@ class Transcript(Download):
     def transcribe_video(self):
         """Transcribe the video using speech recognition."""
         # Extract the audio from the video and save as WAV file
-        audio_file = "./downloads/temp_audio.wav"
-        self.extract_audio_from_video(audio_file)
+        audio_file = f"./{self.transcript_path}/temp_audio.wav"
+
+        # Check if the audio file already exists, if not, extract it
+        if not os.path.exists(audio_file):
+            print(f"Audio file not found. Extracting audio from video to {audio_file}...")
+            self.extract_audio_from_video(audio_file)
+        else:
+            print(f"Audio file already exists at {audio_file}. Skipping extraction.")
 
         # Initialize recognizer
         recognizer = sr.Recognizer()
@@ -49,6 +52,8 @@ class Transcript(Download):
                 print("Speech Recognition could not understand the audio.")
             except sr.RequestError as e:
                 print(f"Could not request results; {e}")
+            except Exception as e:
+                print(f"An error occurred while processing the audio file: {e}")
 
         # Clean up temporary audio file
         if os.path.exists(audio_file):

@@ -1,0 +1,45 @@
+/* Transparent background for navbar */
+.navbar {
+    background-color: transparent !important;
+}
+
+/* Styling for navbar links (Download and Summarize) */
+.navbar-nav .nav-link {
+    color: black !important;
+    font-weight: bold;
+}
+
+/* Styling for navbar brand (Video App) */
+.navbar-brand {
+    color: black !important;
+    font-weight: bold;
+}
+
+/* Change navbar link color on hover */
+.navbar-nav .nav-link:hover {
+    color: #333333 !important;
+}
+
+/* Ensure background covers the entire screen */
+body {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* Center text in the body */
+.content-wrapper {
+    text-align: center;
+}
+
+/* Align main content in center */
+html, body {
+    height: 100%;
+}
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
