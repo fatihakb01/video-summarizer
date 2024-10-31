@@ -11,80 +11,117 @@ from transcript import Transcript
 
 
 class Summarizer(Transcript):
+    # Load models used for sentence embeddings and summarization once for efficiency
     sentence_embedder = SentenceTransformer('all-MiniLM-L6-v2')
     nlp = spacy.load("en_core_web_md")
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
     def __init__(self, file, summarize_path="summarize", summary_name="summarize_video"):
-        super().__init__(file)
-        # Load sentence-transformers for contextual sentence embeddings
-        # self.sentence_embedder = SentenceTransformer('all-MiniLM-L6-v2')
-        # self.nlp = spacy.load("en_core_web_md")
-        # self.transcript = self.transcribe_video()
-        self.summarize_path = summarize_path
-        self.summary_name = f"{summarize_path}/{summary_name}.mp4"
+        """
+        Initializes the Summarizer class, setting paths and creating the summarization directory.
 
-        # Create the transcript directory if it doesn't exist
+        Parameters:
+        - file (str): Path to the video file.
+        - summarize_path (str): Path to save summarized files.
+        - summary_name (str): Name of the output summary video.
+        """
+        super().__init__(file)
+        self.summarize_path = summarize_path
+        self.summary_name = f"{self.summarize_path}/{summary_name}.mp4"
+
+        # Ensure the summary directory exists, creating it if necessary
         if not os.path.exists(self.summarize_path):
             os.makedirs(self.summarize_path)
 
     def summarize_transcript(self, transcript):
         """
-        Use a transformer-based model to summarize the transcript.
+        Summarizes a transcript in chunks to fit within model constraints.
+
+        Parameters:
+        - transcript (str): Full transcript text to be summarized.
+
+        Returns:
+        - str: Concatenated summary of the transcript.
         """
-
-        # Summarize transcript in chunks
         max_chunk_size = 1024
-        transcript_chunks = [transcript[i:i + max_chunk_size]
-                             for i in range(0, len(transcript), max_chunk_size)]
+        transcript_chunks = [transcript[i:i + max_chunk_size] for i in range(0, len(transcript), max_chunk_size)]
 
+        # Summarize each chunk and combine results
         summaries = [self.summarizer(chunk)[0]['summary_text'] for chunk in transcript_chunks]
-
         return f"Summary: {' '.join(summaries)}"
+
+    def clear_summaries_folder(self):
+        """
+        Clears old files from the summary directory to prevent accumulation.
+        """
+        for file in os.listdir(self.summarize_path):
+            file_path = os.path.join(self.summarize_path, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Could not delete file {file_path}: {e}")
 
     def split_transcript_into_sentences(self, transcript):
         """
-        Split the transcript into individual sentences using SpaCy.
+        Splits the transcript into individual sentences.
+
+        Parameters:
+        - transcript (str): The full transcript text.
+
+        Returns:
+        - list[str]: List of sentences from the transcript.
         """
         doc = self.nlp(transcript)
         return [sent.text for sent in doc.sents]
 
     def get_sentence_embeddings(self, sentences):
         """
-        Convert sentences into embeddings using SentenceTransformer for contextual embeddings.
+        Generates embeddings for sentences using a pre-trained sentence-transformers model.
+
+        Parameters:
+        - sentences (list[str]): List of sentences to be embedded.
+
+        Returns:
+        - np.ndarray: Array of sentence embeddings.
         """
-        # Use the sentence-transformers model to get contextual embeddings
         embeddings = self.sentence_embedder.encode(sentences, convert_to_numpy=True)
         return embeddings
 
     def get_similarity_scores(self, summary_sentences, transcript_sentences):
         """
-        Compute cosine similarity between summary and transcript sentences using contextual embeddings.
+        Calculates similarity scores between summary and transcript sentences.
+
+        Parameters:
+        - summary_sentences (list[str]): Summary sentences.
+        - transcript_sentences (list[str]): Transcript sentences.
+
+        Returns:
+        - np.ndarray: Matrix of cosine similarity scores.
         """
         summary_embeddings = self.get_sentence_embeddings(summary_sentences)
         transcript_embeddings = self.get_sentence_embeddings(transcript_sentences)
-
-        # Compute pairwise cosine similarity
         similarity_matrix = cosine_similarity(summary_embeddings, transcript_embeddings)
-
         return similarity_matrix
 
     def map_summary_to_timestamps(self, transcript, summary, video_length, top_n_clips):
         """
-        Map summary sentences to transcript timestamps using sentence similarity.
-        Select the top N most important clips based on similarity scores.
-        """
-        # Step 1: Split transcript into sentences
-        transcript_sentences = self.split_transcript_into_sentences(transcript)
+        Maps summary sentences to the transcript using similarity scores to determine key timestamps.
 
-        # Step 2: Split the summarized content into sentences
+        Parameters:
+        - transcript (str): Full transcript text.
+        - summary (str): Summary of the transcript.
+        - video_length (float): Duration of the original video in seconds.
+        - top_n_clips (int): Number of important clips to select.
+
+        Returns:
+        - list[tuple]: List of selected (start, end) timestamps for key moments.
+        """
+        transcript_sentences = self.split_transcript_into_sentences(transcript)
         doc = self.nlp(summary)
         summary_sentences = [sent.text for sent in doc.sents]
-
-        # Step 3: Compute similarity scores between summary and transcript sentences
         similarity_scores = self.get_similarity_scores(summary_sentences, transcript_sentences)
 
-        # Step 4: For each summary sentence, find the most similar transcript sentence
         used_indices = set()
         timestamps_with_scores = []
 
@@ -92,7 +129,6 @@ class Summarizer(Transcript):
             most_similar_index = similarity_scores[i].argmax()
 
             if most_similar_index in used_indices:
-                # Find the next most similar sentence that hasn't been used yet
                 sorted_indices = np.argsort(-similarity_scores[i])
                 for index in sorted_indices:
                     if index not in used_indices:
@@ -100,64 +136,70 @@ class Summarizer(Transcript):
                         break
 
             used_indices.add(most_similar_index)
-
             transcript_length = len(transcript_sentences)
             start_time = (most_similar_index / transcript_length) * video_length
             end_time = ((most_similar_index + 1) / transcript_length) * video_length
-
-            # Append the timestamp along with the similarity score for ranking later
             timestamps_with_scores.append(((start_time, end_time), similarity_scores[i][most_similar_index]))
 
-        # Step 5: Sort timestamps by their similarity scores (descending order)
         timestamps_with_scores.sort(key=lambda x: x[1], reverse=True)
-
-        # Step 6: Select the top N most important clips based on similarity scores
         selected_timestamps = [(start, end) for (start, end), score in timestamps_with_scores[:top_n_clips]]
-
-        # Ensure the timestamps are in chronological order
         selected_timestamps.sort(key=lambda x: x[0])
-
         return selected_timestamps
 
     def extract_important_clips(self, timestamps):
-        """Extract important video clips based on the list of timestamps."""
+        """
+        Extracts key video clips based on given timestamps.
+
+        Parameters:
+        - timestamps (list[tuple]): List of (start, end) timestamps.
+
+        Returns:
+        - list[VideoFileClip]: List of video clips corresponding to the key moments.
+        """
         video = VideoFileClip(self.name)
         important_clips = [video.subclip(start, end) for start, end in timestamps]
         return important_clips
 
     def compile_clips(self, clips):
-        """Combine important clips into one video."""
+        """
+        Combines selected video clips into a single summarized video.
+
+        Parameters:
+        - clips (list[VideoFileClip]): List of video clips to be concatenated.
+        """
         final_clip = concatenate_videoclips(clips)
         final_clip.write_videofile(self.summary_name, codec='libx264')
 
-    # Main pipeline
-    def summarize_video_pipeline(self, top_n_clips):
-        # Step 1: Transcribe the video
+    def summarize_video_pipeline(self, percentage):
+        """
+        Full pipeline to transcribe, summarize, and compile the summarized video.
+
+        Parameters:
+        - percentage (float): Target percentage of the original video duration for the summary.
+
+        Returns:
+        - str: Path to the saved summarized video.
+        """
         transcript = self.transcribe_video()
         if not transcript:
             print("Failed to transcribe the video.")
             return
 
-        # Step 2: Summarize the transcript
         summary = self.summarize_transcript(transcript)
-
-        # Step 3: Map summary to timestamps
         video_length = VideoFileClip(self.name).duration
+        target_duration = video_length * percentage
+
+        temp_clips = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips=1)
+        if temp_clips:
+            estimated_clip_duration = temp_clips[0][1] - temp_clips[0][0]
+            top_n_clips = int(target_duration // estimated_clip_duration)
+        else:
+            print("Failed to map summary to timestamps.")
+            return
+
         important_timestamps = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips)
-
-        # Step 4: Extract important video clips
         clips = self.extract_important_clips(important_timestamps)
-
-        # Step 5: Compile the clips into a summarized video
         self.compile_clips(clips)
         print(f"Summarized video saved as {self.summarize_path}")
 
         return self.summary_name
-
-# # For testing purposes
-# # Summarize transcript and create video based on summary
-# video_url = "https://www.youtube.com/watch?v=5HYPLcJ6XrM"
-# summarize = Summarizer(video_url)
-# summ = summarize.summarize_transcript()
-# print(summ)
-# summarize.summarize_video_pipeline()
