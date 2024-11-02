@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta tags for character set and responsive design -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS for styling and layout -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Link to custom styles stored in the static directory -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <!-- Page title -->
     <title>Video Summarizer</title>
 </head>
 <body style="background-image: url('{{ url_for('static', filename='images/background.jpg') }}'); background-size: cover;">
+    <!-- Transparent navbar with brand and navigation links -->
     <nav class="navbar navbar-expand-lg navbar-light fixed-top" style="background-color: transparent;">
+        <!-- Brand link directing to the home page -->
         <a class="navbar-brand" href="/">Video Summarizer</a>
+
+        <!-- Center-aligned navigation links for easy access to Download and Summarize pages -->
         <div class="collapse navbar-collapse justify-content-center">
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -22,14 +33,17 @@
         </div>
     </nav>
 
+    <!-- Main container for content with top margin to clear fixed navbar -->
     <div class="container mt-5 pt-5">
-        <!-- Flash messages section -->
+        <!-- Flash messages section for displaying success, error, or informational messages to the user -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="alert-container">
+                    <!-- Loop through each flashed message and display it with its category as the alert style -->
                     {% for category, message in messages %}
                         <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                             {{ message }}
+                            <!-- Close button for dismissing the alert -->
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
@@ -39,10 +53,12 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Block to be filled with content specific to each page that extends base.html -->
         {% block content %}
         {% endblock %}
     </div>
 
+    <!-- JavaScript libraries required for Bootstrap components -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

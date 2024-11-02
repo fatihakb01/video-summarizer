@@ -5,6 +5,7 @@ from flask_bootstrap import Bootstrap5
 from werkzeug.utils import secure_filename
 from download import Download
 from summarizer import Summarizer
+from cleaner import Cleaner
 from dotenv import load_dotenv
 
 # Initialize the environment variables, Flask application, and Bootstrap extension
@@ -12,7 +13,13 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 app.config['UPLOAD_FOLDER'] = os.getenv("UPLOAD_FOLDER")
+app.config['DOWNLOAD_FOLDER'] = os.getenv("DOWNLOAD_FOLDER")
+upload_cleaner = Cleaner(app.config['UPLOAD_FOLDER'])
+download_cleaner = Cleaner(app.config['DOWNLOAD_FOLDER'])
 Bootstrap5(app)
+
+# Specify the video file extensions
+video_extensions = {".mp4", ".avi", ".mov", ".mkv"}
 
 
 # Define the homepage route for video/audio download
@@ -26,7 +33,12 @@ def download_page():
     - On successful download, serves the file for download to the user.
     - On failure, flashes an error message and reloads the page.
     """
+    download_cleaner.clean()
     if request.method == 'POST':
+        # Ensure the download directory exists
+        if not os.path.exists(app.config['DOWNLOAD_FOLDER']):
+            os.makedirs(app.config['DOWNLOAD_FOLDER'])
+
         # Retrieve the URL and download type from the form submission
         url = request.form.get('url')
         download_type = request.form.get('download_type')
@@ -62,7 +74,7 @@ def download_page():
                 flash(f"An error occurred while sending the file: {e}", "danger")
                 return redirect(url_for('download_page'))
 
-        flash("An error occurred. File not found.", "danger")
+        flash("An error occurred. Please provide a valid Youtube url.", "danger")
         return redirect(url_for('download_page'))
 
     # Render the download page
@@ -80,6 +92,7 @@ def summarize_page():
     - If POST: Generates a summarized video file, then serves it for download.
     - If GET: Renders the summarization page with any relevant info.
     """
+    upload_cleaner.clean()
     if request.method == 'POST':
         # Check if a file was uploaded
         if 'video_file' not in request.files:
@@ -89,9 +102,17 @@ def summarize_page():
         if video_file.filename == '':
             return render_template('summarize.html', info="No file selected.")
 
+        # Check file extension to ensure it is a video file
         if video_file:
-            # Secure the filename and prepare the file path
             filename = secure_filename(video_file.filename)
+            file_ext = os.path.splitext(filename)[1].lower()
+
+            # If an audio file is detected, show an error message and redirect
+            if file_ext not in video_extensions:
+                flash("Audio files are not supported for summarization. Please upload a video file.", "warning")
+                return redirect(url_for('summarize_page'))
+
+            # Secure the filename and prepare the file path
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
             # Ensure the upload directory exists

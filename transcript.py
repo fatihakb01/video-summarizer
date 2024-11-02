@@ -1,7 +1,8 @@
-# Import necessary modules
+# Import modules
 import os
 import tempfile
 import speech_recognition as sr
+import mimetypes
 from moviepy.video.io.VideoFileClip import VideoFileClip
 import multiprocessing
 from pydub import AudioSegment
@@ -30,21 +31,15 @@ class Transcript:
         self.chunk_length_ms = chunk_length_ms
         self.recognizer = sr.Recognizer()
 
-        if not os.path.exists(self.transcript_path):
-            os.makedirs(self.transcript_path)
+    def is_audio_file(self):
+        """
+        Checks if the input file is an audio file based on its MIME type.
 
-    def clear_transcripts_folder(self):
+        Returns:
+        - bool: True if the file is audio, False otherwise.
         """
-        Clears all files in the transcripts folder, removing old transcripts and temporary files
-        before processing a new video.
-        """
-        for file in os.listdir(self.transcript_path):
-            file_path = os.path.join(self.transcript_path, file)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            except Exception as e:
-                print(f"Could not delete file {file_path}: {e}")
+        mime_type, _ = mimetypes.guess_type(self.name)
+        return mime_type and mime_type.startswith('audio')
 
     def extract_audio_from_video(self):
         """
@@ -54,7 +49,6 @@ class Transcript:
         - str or None: Path of the extracted audio file if successful; None if an error occurs.
         """
         try:
-            self.clear_transcripts_folder()
             video_clip = VideoFileClip(self.name)
             audio_clip = video_clip.audio
             audio_clip.write_audiofile(self.audio_file)
@@ -121,10 +115,10 @@ class Transcript:
 
     def transcribe_video(self):
         """
-        Manages the full transcription process, including audio extraction, chunking, and combining transcriptions.
+        Manages the full transcription process for video files.
 
         Returns:
-        - str: Final combined transcription text for the video.
+        - str: Final combined transcription text.
         """
         self.extract_audio_from_video()
         transcript = self.transcribe_in_parallel()

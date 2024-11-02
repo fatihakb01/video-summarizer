@@ -1,34 +1,43 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Center-aligned container for the download section -->
 <div class="d-flex justify-content-center align-items-center flex-column" style="height: 50vh;">
+    <!-- Page title -->
     <h2>Download Video or Audio</h2>
+    <!-- Brief instruction for users -->
     <p>Enter a YouTube URL below to download the video or audio file.</p>
 
+    <!-- Form for user input (URL and download type) and submission -->
     <form class="form-inline justify-content-center flex-column align-items-center" method="POST">
-        <!-- YouTube URL Input -->
+
+        <!-- YouTube URL input field -->
         <div class="mb-3">
             <input class="form-control" type="text" name="url" placeholder="Enter YouTube URL" style="width: 350px;" required>
+            <!-- Placeholder text guides users to input a valid YouTube link -->
         </div>
 
-        <!-- Download Type Selection (Audio or Video) -->
+        <!-- Selection for download type (Audio or Video) -->
         <div class="mb-3">
+            <!-- Audio option -->
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" name="download_type" id="audio" value="audio" required>
                 <label class="form-check-label" for="audio">Audio</label>
             </div>
+            <!-- Video option -->
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="radio" name="download_type" id="video" value="video" required>
                 <label class="form-check-label" for="video">Video</label>
             </div>
         </div>
 
-        <!-- Submit Button -->
+        <!-- Submit button to initiate download -->
         <div>
             <button class="btn btn-primary" type="submit">Download</button>
         </div>
     </form>
 
+    <!-- Placeholder for backend messages or status updates -->
     <p>{{ info }}</p>
 </div>
 {% endblock %}

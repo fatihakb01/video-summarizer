@@ -1,47 +1,42 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Center-aligned container for video upload section -->
 <div class="d-flex justify-content-center align-items-center flex-column" style="height: 50vh;">
+    <!-- Page title -->
     <h2>Summarize Uploaded Video</h2>
+    <!-- Short instructions for users -->
     <p>Upload a video file below to generate a summarized version.</p>
 
-    <!-- Display flash messages for errors and success -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="col-12">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
+    <!-- Form for uploading video file and submitting for summarization -->
     <form class="form-inline justify-content-center" method="POST" action="{{ url_for('summarize_page') }}" enctype="multipart/form-data">
-        <!-- File input group with trash icon -->
+        <!-- File input group with 'Choose file' and trash icon to clear selection -->
         <div class="input-group mb-4" style="width: 100%; max-width: 600px;">
             <div class="custom-file">
+                <!-- File input for video file, required to proceed -->
                 <input id="video-file" class="custom-file-input" type="file" name="video_file" aria-describedby="clear-file" style="height: 50px;" required>
-                <label class="custom-file-label" for="video-file">Choose file</label>
+                <label class="custom-file-label" for="video-file">Choose file</label> <!-- Label dynamically updates with file name -->
             </div>
+            <!-- Clear file button with trash icon to reset file input -->
             <div class="input-group-append">
                 <button type="button" class="btn btn-danger" id="clear-file" style="height: 38px;">
-                    <i class="fas fa-trash"></i>
+                    <i class="fas fa-trash"></i> <!-- Trash icon for clear button -->
                 </button>
             </div>
         </div>
+        <!-- Submit button to send file for summarization -->
         <button class="btn btn-primary mb-2" type="submit">Summarize</button>
     </form>
 
+    <!-- Placeholder for displaying messages or status information from backend -->
     <p>{{ info }}</p>
 </div>
 
-<!-- Font Awesome for trash icon -->
+<!-- Include Font Awesome for using icons (e.g., trash icon) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 <script>
-    // JavaScript to clear the file input when trash icon is clicked
+    // JavaScript to clear the file input when the trash icon is clicked
     document.getElementById('clear-file').addEventListener('click', function() {
         document.getElementById('video-file').value = '';  // Clear file input value
         document.querySelector('.custom-file-label').innerHTML = 'Choose file';  // Reset label text
@@ -49,7 +44,7 @@
 
     // JavaScript to update file input label with the chosen file name
     document.getElementById('video-file').addEventListener('change', function() {
-        let fileName = this.files[0]?.name || 'Choose file';
+        let fileName = this.files[0]?.name || 'Choose file'; // Display file name or default text
         document.querySelector('.custom-file-label').innerHTML = fileName;
     });
 </script>

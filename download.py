@@ -1,4 +1,4 @@
-# Import necessary modules
+# Import modules
 import os
 import yt_dlp
 
@@ -19,21 +19,6 @@ class Download:
         self.url = url
         self.download_path = download_path
         self.name = None
-        if not os.path.exists(self.download_path):
-            os.makedirs(self.download_path)
-
-    def clear_downloads_folder(self):
-        """
-        Clears the download directory by deleting all files in it.
-        """
-        for file in os.listdir(self.download_path):
-            file_path = os.path.join(self.download_path, file)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                    print(f"Deleted old file: {file_path}")
-            except Exception as e:
-                print(f"Could not delete file {file_path}: {e}")
 
     def download(self, filename, format_type):
         """
@@ -46,8 +31,6 @@ class Download:
         Returns:
         - str or None: The file path of the downloaded content if successful; None if an error occurs.
         """
-        self.clear_downloads_folder()
-
         ydl_opts = {
             'format': format_type,
             'outtmpl': f'{self.download_path}/{filename}.%(ext)s',
