@@ -1,4 +1,5 @@
 # Import modules
+import os
 import spacy
 import numpy as np
 from moviepy.video.compositing.concatenate import concatenate_videoclips
@@ -7,6 +8,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 from transcript import Transcript
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 class Summarizer(Transcript):
@@ -20,7 +25,7 @@ class Summarizer(Transcript):
     nlp = spacy.load("en_core_web_md")
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
-    def __init__(self, file, summarize_path="summarize", summary_name="summarize_video"):
+    def __init__(self, file, summarize_path=os.getenv("SUMMARIZE_FOLDER"), summary_name="summarize_video"):
         """
         Initializes the Summarizer class, setting paths and creating the summarization directory.
 
@@ -191,37 +196,47 @@ class Summarizer(Transcript):
         Returns:
         - str: Path to the saved summarized video.
         """
-        # Step 1: Transcribe video to obtain full text; terminate if transcription fails.
-        transcript = self.transcribe_video()
-        if not transcript:
-            print("Failed to transcribe the video.")
-            return
+        try:
+            # Step 1: Transcribe video to obtain full text; terminate if transcription fails.
+            transcript = self.transcribe_video()
+            if not transcript:
+                print("Failed to transcribe the video.")
+                return
 
-        # Step 2: Generate a text summary of the transcript.
-        summary = self.summarize_transcript(transcript)
+            # Step 2: Generate a text summary of the transcript.
+            summary = self.summarize_transcript(transcript)
 
-        # Step 3: Calculate target duration of summary based on input percentage.
-        video_length = VideoFileClip(self.name).duration
-        target_duration = video_length * percentage
+            # Step 3: Calculate target duration of summary based on input percentage.
+            video_length = VideoFileClip(self.name).duration
+            target_duration = video_length * percentage
 
-        # Step 4: Map summary sentences to corresponding timestamps in the original video.
-        # Initialize with one clip to estimate typical length for sizing the target number of clips.
-        temp_clips = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips=1)
-        if temp_clips:
-            estimated_clip_duration = temp_clips[0][1] - temp_clips[0][0]
-            top_n_clips = int(target_duration // estimated_clip_duration)
-        else:
-            print("Failed to map summary to timestamps.")
-            return
+            # Step 4: Map summary sentences to corresponding timestamps in the original video.
+            # Initialize with one clip to estimate typical length for sizing the target number of clips.
+            temp_clips = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips=1)
+            if temp_clips:
+                estimated_clip_duration = temp_clips[0][1] - temp_clips[0][0]
+                top_n_clips = int(target_duration // estimated_clip_duration)
+            else:
+                print("Failed to map summary to timestamps.")
+                return
 
-        # Step 5: Retrieve actual timestamps for a sufficient number of key moments.
-        important_timestamps = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips)
+            # Step 5: Retrieve actual timestamps for a sufficient number of key moments.
+            important_timestamps = self.map_summary_to_timestamps(transcript, summary, video_length, top_n_clips)
 
-        # Step 6: Extract video segments corresponding to the key timestamps.
-        clips = self.extract_important_clips(important_timestamps)
+            # Step 6: Extract video segments corresponding to the key timestamps.
+            clips = self.extract_important_clips(important_timestamps)
 
-        # Step 7: Concatenate selected clips into a summarized video and save the final output.
-        self.compile_clips(clips)
-        print(f"Summarized video saved as {self.summarize_path}")
+            # Step 7: Concatenate selected clips into a summarized video and save the final output.
+            self.compile_clips(clips)
+            print(f"Summarized video saved as {self.summarize_path}")
 
-        return self.summary_name
+            return self.summary_name
+
+        # Handle memory error exception
+        except MemoryError as e:
+            print("MemoryError: Not enough memory to complete the process.")
+            raise e
+        # Handle the other exceptions
+        except Exception as e:
+            print(f"Unexpected error during summarization: {e}")
+            raise e

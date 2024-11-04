@@ -26,11 +26,12 @@ class Cleaner:
         Raises:
         - Exception: If a file cannot be deleted, logs the exception error.
         """
-        for file in os.listdir(self.path):
-            file_path = os.path.join(self.path, file)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                    print(f"Deleted old file: {file_path}")
-            except Exception as e:
-                print(f"Could not delete file {file_path}: {e}")
+        if self.path:
+            for file in os.listdir(self.path):
+                file_path = os.path.join(self.path, file)
+                try:
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+                        print(f"Deleted old file: {file_path}")
+                except Exception as e:
+                    print(f"Could not delete file {file_path}: {e}")

@@ -1,6 +1,10 @@
 # Import modules
 import os
 import yt_dlp
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 class Download:
@@ -8,7 +12,7 @@ class Download:
     A class to handle downloading videos or audio from a specified URL and manage downloaded files.
     """
 
-    def __init__(self, url, download_path="downloads"):
+    def __init__(self, url, download_path=os.getenv("DOWNLOAD_FOLDER")):
         """
         Initializes the Download object with the specified URL and download path.
 

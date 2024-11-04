@@ -35,17 +35,6 @@
 <!-- Include Font Awesome for using icons (e.g., trash icon) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-<script>
-    // JavaScript to clear the file input when the trash icon is clicked
-    document.getElementById('clear-file').addEventListener('click', function() {
-        document.getElementById('video-file').value = '';  // Clear file input value
-        document.querySelector('.custom-file-label').innerHTML = 'Choose file';  // Reset label text
-    });
-
-    // JavaScript to update file input label with the chosen file name
-    document.getElementById('video-file').addEventListener('change', function() {
-        let fileName = this.files[0]?.name || 'Choose file'; // Display file name or default text
-        document.querySelector('.custom-file-label').innerHTML = fileName;
-    });
-</script>
+<!-- Reference to the trash icon logic -->
+<script src="{{ url_for('static', filename='js/summarize.js') }}"></script>
 {% endblock %}

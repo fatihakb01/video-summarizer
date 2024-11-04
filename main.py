@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-app.config['UPLOAD_FOLDER'] = os.getenv("UPLOAD_FOLDER")
+app.config['SUMMARIZE_FOLDER'] = os.getenv("SUMMARIZE_FOLDER")
 app.config['DOWNLOAD_FOLDER'] = os.getenv("DOWNLOAD_FOLDER")
-upload_cleaner = Cleaner(app.config['UPLOAD_FOLDER'])
+upload_cleaner = Cleaner(app.config['SUMMARIZE_FOLDER'])
 download_cleaner = Cleaner(app.config['DOWNLOAD_FOLDER'])
 Bootstrap5(app)
 
@@ -33,12 +33,14 @@ def download_page():
     - On successful download, serves the file for download to the user.
     - On failure, flashes an error message and reloads the page.
     """
-    download_cleaner.clean()
-    if request.method == 'POST':
-        # Ensure the download directory exists
-        if not os.path.exists(app.config['DOWNLOAD_FOLDER']):
-            os.makedirs(app.config['DOWNLOAD_FOLDER'])
+    # Ensure the download directory exists
+    if not os.path.exists(app.config['DOWNLOAD_FOLDER']):
+        os.makedirs(app.config['DOWNLOAD_FOLDER'])
 
+    # Clean the download folder every time the browser is refreshed
+    download_cleaner.clean()
+
+    if request.method == 'POST':
         # Retrieve the URL and download type from the form submission
         url = request.form.get('url')
         download_type = request.form.get('download_type')
@@ -92,7 +94,13 @@ def summarize_page():
     - If POST: Generates a summarized video file, then serves it for download.
     - If GET: Renders the summarization page with any relevant info.
     """
+    # Ensure the upload directory exists
+    if not os.path.exists(app.config['SUMMARIZE_FOLDER']):
+        os.makedirs(app.config['SUMMARIZE_FOLDER'])
+
+    #  Clean the download folder every time the browser is refreshed
     upload_cleaner.clean()
+
     if request.method == 'POST':
         # Check if a file was uploaded
         if 'video_file' not in request.files:
@@ -113,11 +121,7 @@ def summarize_page():
                 return redirect(url_for('summarize_page'))
 
             # Secure the filename and prepare the file path
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-            # Ensure the upload directory exists
-            if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                os.makedirs(app.config['UPLOAD_FOLDER'])
+            file_path = os.path.join(app.config['SUMMARIZE_FOLDER'], filename)
 
             # Save the uploaded file to the server
             video_file.save(file_path)
@@ -137,8 +141,14 @@ def summarize_page():
                 else:
                     info = "Error: Summarization did not return a valid file path."
                     return render_template('summarize.html', info=info)
+            # Display error if summarization fails
+            except MemoryError as e:
+                flash("Insufficient memory to complete summarization. Please try on a device with more memory.",
+                      "error")
+                info = f"Error during summarization: {e}"
+                return render_template('summarize.html', info=info)
             except Exception as e:
-                # Display error if summarization fails
+                flash(f"An unexpected error occurred: {str(e)}", "error")
                 info = f"Error during summarization: {e}"
                 return render_template('summarize.html', info=info)
 

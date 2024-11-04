@@ -1,0 +1,27 @@
+# Core packages
+numpy==1.24.0
+scikit-learn==1.5.2
+
+# Flask and essential libraries
+Flask==3.0.3
+Bootstrap-Flask==2.4.0
+Werkzeug==3.0.4
+
+# MoviePy and video/audio handling
+moviepy==1.0.3
+pydub==0.25.1
+yt-dlp==2024.10.7
+
+# Speech recognition
+SpeechRecognition==3.10.4
+
+# NLP and Transformers
+spacy==3.8.2
+sentence-transformers==3.2.0
+transformers==4.45.2
+
+# Environment variable management
+python-dotenv==1.0.1
+
+# For running Flask applications in production
+gunicorn==21.2.0

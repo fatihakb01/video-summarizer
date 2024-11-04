@@ -3,9 +3,13 @@ import os
 import tempfile
 import speech_recognition as sr
 import mimetypes
-from moviepy.video.io.VideoFileClip import VideoFileClip
 import multiprocessing
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from pydub import AudioSegment
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 class Transcript:
@@ -14,7 +18,8 @@ class Transcript:
     splitting it into manageable chunks, transcribing in parallel, and saving the result.
     """
 
-    def __init__(self, file, transcript_path="transcripts", transcript_name="video_transcript", chunk_length_ms=60000):
+    def __init__(self, file, transcript_path=os.getenv("TRANSCRIPT_FOLDER"), transcript_name="video_transcript",
+                 chunk_length_ms=60000):
         """
         Initializes the Transcript object with input video file, output path, and transcript file name.
 
@@ -30,6 +35,10 @@ class Transcript:
         self.audio_file = f"{self.transcript_path}/temp_audio.wav"
         self.chunk_length_ms = chunk_length_ms
         self.recognizer = sr.Recognizer()
+
+        # Ensure the transcript directory exists
+        if not os.path.exists(self.transcript_path):
+            os.makedirs(self.transcript_path)
 
     def is_audio_file(self):
         """
