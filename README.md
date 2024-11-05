@@ -101,6 +101,11 @@ python main.py
     - `extract_important_clips`: Extracts video clips from specified timestamps.
     - `compile_clips`: Concatenates selected clips into a summarized video.
 
+### `Cleaner`
+- Utility class for clearing all files in a specified directory, ensuring the folder is emptied of previous files before new downloads or summaries.
+- **Methods**:
+    - `clean`: Deletes all files in the specified directory, logging any errors encountered during deletion.
+
 ### `Configuration`
 - **Transcript Chunk Size**: You can adjust `chunk_length_ms` in `Transcript` to change the duration of audio chunks processed in parallel.
 - **Target Summary Duration**: In `Summarizer`, set the `percentage` parameter in `summarize_video_pipeline` to control the length of the summarized video relative to the original.
